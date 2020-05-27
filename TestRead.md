@@ -1,3 +1,3 @@
-#Created this file to test a command
+# Created this file to test a command
 
 It __works__ !
