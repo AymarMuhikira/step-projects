@@ -4,6 +4,15 @@
   width: 650px;
 }
 
+#header {
+    color: navy;
+}
+
+#w2 {
+    text-align: center;
+    color: dodgerblue;
+}
+
 #greeting-container {
   margin-top: 20px;
 }
