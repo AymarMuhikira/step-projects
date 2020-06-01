@@ -1,11 +1,28 @@
 #content {
   margin-left: auto;
   margin-right: auto;
-  width: 650px;
+  width: 100%;
+  background-color: rebeccapurple;
 }
 
 #header {
+    display:flex;
+    background-color: paleturquoise;
+    height: 100px;
+}
+
+#header-txt {
+    vertical-align: middle;
     color: navy;
+}
+
+#header-img {
+    margin-left: auto;
+    padding-top: 5px;
+    width: 90px;
+    height: 90px;
+    border-radius: 100%;
+    padding: 5px;
 }
 
 #w2 {
