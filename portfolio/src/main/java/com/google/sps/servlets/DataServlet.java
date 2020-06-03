@@ -26,18 +26,35 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet("/data")
 public class DataServlet extends HttpServlet {
 
+  private int num_cmnts = 0;
+  private ArrayList<String> comments = new ArrayList<String>();
+
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
     /*These lines used to return a Hello Aymar message*/
     //response.setContentType("text/html;");
     //response.getWriter().println("Hello Aymar!");
-    ArrayList<String> msg = new ArrayList<String>();
+
+    /*These lines were used to send a json string of messages*/
+    /*ArrayList<String> msg = new ArrayList<String>();
     msg.add("First message.");
     msg.add("This is the second string.");
     msg.add("Last string.");
     String json = convertToJson(msg);
     response.setContentType("application/json;");
+    response.getWriter().println(json);*/
+
+    response.setContentType("application/json");
+    String json = convertComments();
     response.getWriter().println(json);
+  }
+
+  @Override
+  public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+      num_cmnts++;
+      String Cmt = request.getParameter("cmnt");
+      comments.add("#Comment"+num_cmnts+": "+Cmt);
+      response.sendRedirect("/index.html");
   }
 
   /**
@@ -55,5 +72,19 @@ public class DataServlet extends HttpServlet {
     }
     json += "}";
     return json;
+  }
+
+  private String convertComments() {
+      String json = "{";
+      json+="\"num_comments\": " + num_cmnts;
+      json+=", \"comments\": [";
+      for(int i=0; i < num_cmnts; i++) {
+          json += "\"" + comments.get(i) + "\"";
+          if(i!=num_cmnts-1){
+              json+=", ";
+          }
+      }
+      json+="]}";
+      return json;
   }
 }
