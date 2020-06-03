@@ -17,6 +17,9 @@ package com.google.sps.servlets;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 public class DataServlet extends HttpServlet {
 
   private int num_cmnts = 0;
-  private ArrayList<String> comments = new ArrayList<String>();
+  private ArrayList<String> comments;
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -47,6 +50,21 @@ public class DataServlet extends HttpServlet {
     response.setContentType("application/json;");
     response.getWriter().println(json);*/
 
+    comments = new ArrayList<String>();
+    Query query = new Query("Comment").addSort("Number", SortDirection.ASCENDING);
+
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    PreparedQuery results = datastore.prepare(query);
+
+    num_cmnts = 0;
+
+    for (Entity entity : results.asIterable()) {
+      num_cmnts++;
+      String text = (String) entity.getProperty("text");
+
+      comments.add("#Comment"+num_cmnts+": "+text);
+    }
+
     response.setContentType("application/json");
     String json = convertComments();
     response.getWriter().println(json);
@@ -56,11 +74,10 @@ public class DataServlet extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
     num_cmnts++;
     String Cmt = request.getParameter("cmnt");
-    comments.add("#Comment"+num_cmnts+": "+Cmt);
 
     Entity taskEntity = new Entity("Comment");
     taskEntity.setProperty("Number", num_cmnts);
-    taskEntity.setProperty("text", comments.get(num_cmnts-1));
+    taskEntity.setProperty("text", Cmt);
     
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(taskEntity);
