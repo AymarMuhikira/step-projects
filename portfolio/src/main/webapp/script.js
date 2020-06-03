@@ -45,3 +45,20 @@ async function getMessage() {
     const message = "" + json.msg1 + " " + json.msg2 + " " + json.msg3;
     document.getElementById('message-container').innerText = message;
 }
+
+/**
+ *Gets the comments posted and prints them back
+ */
+async function getComments() {
+    const response = await fetch('/data');
+    const json = await response.json();
+    const posted_comments = document.getElementById('posted_comments');
+    const num_comments = json.num_comments;
+    const comments = json.comments;
+    var i;
+    for(i = 0; i < num_comments; i++) {
+        const liElement = document.createElement('li');
+        liElement.innerText = comments[i];
+        posted_comments.appendChild(liElement);
+    }
+}
