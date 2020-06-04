@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 public class DataServlet extends HttpServlet {
 
   private int num_cmnts = 0;
+  private int maxComment = 1;
   private ArrayList<String> comments;
 
   @Override
@@ -50,6 +51,23 @@ public class DataServlet extends HttpServlet {
     response.setContentType("application/json;");
     response.getWriter().println(json);*/
 
+    /*String maxCommentstring = request.getParameter("max");
+    try {
+      maxComment = Integer.parseInt(maxCommentstring);
+    } catch (NumberFormatException e) {
+      System.err.println("Could not convert to int: " + maxCommentstring);
+      maxComment = 1;
+    }*/
+
+    String maxCommentstring = request.getParameter("max-comment");
+    try {
+      maxComment = Integer.parseInt(maxCommentstring);
+      System.err.println("Could convert to int: " + maxCommentstring);
+    } catch (NumberFormatException e) {
+      System.err.println("Could not convert to int: " + maxCommentstring);
+      maxComment = 1;
+    }
+    
     comments = new ArrayList<String>();
     Query query = new Query("Comment").addSort("Number", SortDirection.ASCENDING);
 
@@ -60,9 +78,11 @@ public class DataServlet extends HttpServlet {
 
     for (Entity entity : results.asIterable()) {
       num_cmnts++;
-      String text = (String) entity.getProperty("text");
+      if(num_cmnts <= maxComment) {
+        String text = (String) entity.getProperty("text");
 
-      comments.add("#Comment"+num_cmnts+": "+text);
+        comments.add("#Comment"+num_cmnts+": "+text);
+      }
     }
 
     response.setContentType("application/json");
@@ -103,12 +123,13 @@ public class DataServlet extends HttpServlet {
   }
 
   private String convertComments() {
+      int size = Math.min(num_cmnts,maxComment);
       String json = "{";
-      json+="\"num_comments\": " + num_cmnts;
+      json+="\"num_comments\": " + size;
       json+=", \"comments\": [";
-      for(int i=0; i < num_cmnts; i++) {
+      for(int i=0; i < size; i++) {
           json += "\"" + comments.get(i) + "\"";
-          if(i!=num_cmnts-1){
+          if(i!=size - 1){
               json+=", ";
           }
       }
