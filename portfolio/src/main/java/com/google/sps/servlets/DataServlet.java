@@ -35,6 +35,7 @@ public class DataServlet extends HttpServlet {
   private int num_cmnts = 0;
   private int maxComment = 1;
   private ArrayList<String> comments;
+  private ArrayList<Long> IDs;
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -69,6 +70,7 @@ public class DataServlet extends HttpServlet {
     }
     
     comments = new ArrayList<String>();
+    IDs = new ArrayList<Long>();
     Query query = new Query("Comment").addSort("Number", SortDirection.ASCENDING);
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
@@ -80,8 +82,10 @@ public class DataServlet extends HttpServlet {
       num_cmnts++;
       if(num_cmnts <= maxComment) {
         String text = (String) entity.getProperty("text");
+        long id = entity.getKey().getId();
 
         comments.add("#Comment"+num_cmnts+": "+text);
+        IDs.add(id);
       }
     }
 
@@ -95,12 +99,12 @@ public class DataServlet extends HttpServlet {
     num_cmnts++;
     String Cmt = request.getParameter("cmnt");
 
-    Entity taskEntity = new Entity("Comment");
-    taskEntity.setProperty("Number", num_cmnts);
-    taskEntity.setProperty("text", Cmt);
+    Entity commentEntity = new Entity("Comment");
+    commentEntity.setProperty("Number", num_cmnts);
+    commentEntity.setProperty("text", Cmt);
     
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    datastore.put(taskEntity);
+    datastore.put(commentEntity);
 
     response.sendRedirect("/index.html");
   }
@@ -128,7 +132,8 @@ public class DataServlet extends HttpServlet {
       json+="\"num_comments\": " + size;
       json+=", \"comments\": [";
       for(int i=0; i < size; i++) {
-          json += "\"" + comments.get(i) + "\"";
+          json+="{\"id\": "+IDs.get(i)+", \"txt\": ";
+          json += "\"" + comments.get(i) + "\"}";
           if(i!=size - 1){
               json+=", ";
           }
