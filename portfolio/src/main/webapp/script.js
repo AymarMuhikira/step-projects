@@ -51,7 +51,7 @@ async function getMessage() {
  */
 async function getComments() {
   var max_comments = document.getElementById('max-comment').value;
-  const response = await fetch('/data?max-comment='+max_comments);
+  const response = await fetch('/data?max-comment=' + max_comments);
   const json = await response.json();
   const posted_comments = document.getElementById('posted_comments');
   posted_comments.innerHTML = "";
