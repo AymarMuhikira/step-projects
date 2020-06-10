@@ -40,27 +40,53 @@ async function getHello() {
  *Adds json messages to the message division
  */
 async function getMessage() {
-    const response = await fetch('/data');
-    const json = await response.json();
-    const message = "" + json.msg1 + " " + json.msg2 + " " + json.msg3;
-    document.getElementById('message-container').innerText = message;
+  const response = await fetch('/data');
+  const json = await response.json();
+  const message = "" + json.msg1 + " " + json.msg2 + " " + json.msg3;
+  document.getElementById('message-container').innerText = message;
 }
 
 /**
  *Gets the comments posted and prints them back
  */
 async function getComments() {
-    var max_comments = document.getElementById('max-comment').value;
-    const response = await fetch('/data?max-comment='+max_comments);
-    const json = await response.json();
-    const posted_comments = document.getElementById('posted_comments');
-    posted_comments.innerHTML = "";
-    const num_comments = json.num_comments;
-    const comments = json.comments;
-    var i;
-    for(i = 0; i < num_comments; i++) {
-        const liElement = document.createElement('li');
-        liElement.innerText = comments[i];
-        posted_comments.appendChild(liElement);
-    }
+  var max_comments = document.getElementById('max-comment').value;
+  const response = await fetch('/data?max-comment='+max_comments);
+  const json = await response.json();
+  const posted_comments = document.getElementById('posted_comments');
+  posted_comments.innerHTML = "";
+  const num_comments = json.numComments;
+  const comments = json.comments;
+  const ids = json.ids;
+  for (var i = 0; i < num_comments; i++) {
+    const liElement = document.createElement('li');
+    liElement.className = 'comment';
+    
+    const textElement = document.createElement('span');
+    textElement.innerText = comments[i];
+
+    const deleteButtonElement = document.createElement('button');
+    deleteButtonElement.innerText = 'Delete';
+    var id = ids[i];
+
+    deleteButtonElement.value = id;
+    deleteButtonElement.addEventListener('click', () => {
+      deleteTask(deleteButtonElement.value);
+
+      // Remove the task from the DOM.
+      liElement.remove();
+    });
+
+    liElement.appendChild(textElement);
+    liElement.appendChild(deleteButtonElement);
+
+    posted_comments.appendChild(liElement);
+  }
+}
+
+/** Calls server to delete the task. */
+function deleteTask(id) {
+  const params = new URLSearchParams();
+  params.append('id', id);
+  fetch('/delete-comment', {method: 'POST', body: params});
 }
