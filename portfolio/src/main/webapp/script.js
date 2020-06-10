@@ -42,7 +42,7 @@ async function getHello() {
 async function getMessage() {
     const response = await fetch('/data');
     const json = await response.json();
-    const message = "" + json.msg1 + " " + json.msg2 + " " + json.msg3;
+    const message = "" + json.firstMessage + " " + json.secondMessage + " " + json.thirdMessage;
     document.getElementById('message-container').innerText = message;
 }
 
@@ -53,12 +53,10 @@ async function getComments() {
     const response = await fetch('/data');
     const json = await response.json();
     const posted_comments = document.getElementById('posted_comments');
-    const num_comments = json.num_comments;
     const comments = json.comments;
-    var i;
-    for(i = 0; i < num_comments; i++) {
+    for(cmnt of comments) {
         const liElement = document.createElement('li');
-        liElement.innerText = comments[i];
+        liElement.innerText = cmnt;
         posted_comments.appendChild(liElement);
     }
 }
