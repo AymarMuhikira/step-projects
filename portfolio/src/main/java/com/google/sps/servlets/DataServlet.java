@@ -29,14 +29,14 @@ public class DataServlet extends HttpServlet {
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    CommentData msg = new CommentData("First message","This is the second string.","Last string.");
+    CommentData msg = new CommentData("First message", "This is the second string.", "Last string.");
     String json = convertToJson(msg);
     response.setContentType("application/json;");
     response.getWriter().println(json);
   }
 
   /**
-   * Converts an ArrayList into a JSON string using manual String concatentation.
+   * Converts an ArrayList into a JSON string using Gson library
    */
   private String convertToJson(CommentData msg) {
     Gson gson = new Gson();

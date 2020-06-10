@@ -14,16 +14,16 @@
 
 package com.google.sps.data;
 
-/** Class containing server statistics. */
+/** Class containing the hard-coded messages. */
 public final class CommentData {
 
-  private final String msg1;
-  private final String msg2;
-  private final String msg3;
+  private final String firstMessage;
+  private final String secondMessage;
+  private final String thirdMessage;
 
   public CommentData(String firstMessage, String secondMessage, String thirdMessage) {
-    this.msg1 = firstMessage;
-    this.msg2 = secondMessage;
-    this.msg3 = thirdMessage;
+    this.firstMessage = firstMessage;
+    this.secondMessage = secondMessage;
+    this.thirdMessage = thirdMessage;
   }
 }

@@ -42,7 +42,6 @@ async function getHello() {
 async function getMessage() {
     const response = await fetch('/data');
     const json = await response.json();
-    console.log(json)
-    const message = "" + json.msg1 + " " + json.msg2 + " " + json.msg3;
+    const message = "" + json.firstMessage + " " + json.secondMessage + " " + json.thirdMessage;
     document.getElementById('message-container').innerText = message;
 }
