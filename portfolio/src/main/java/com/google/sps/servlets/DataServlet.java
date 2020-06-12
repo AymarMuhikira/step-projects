@@ -54,7 +54,6 @@ public class DataServlet extends HttpServlet {
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     PreparedQuery results = datastore.prepare(query);
 
-
     for (Entity entity : results.asIterable()) {
       int commentNumber = commentData.getSize() + 1;
 
@@ -63,10 +62,7 @@ public class DataServlet extends HttpServlet {
         long id = entity.getKey().getId();
 
         commentData.addComment("Comment#" + commentNumber + ": " + text, id);
-
       }  
-
-      
     }
 
     response.setContentType("application/json");
