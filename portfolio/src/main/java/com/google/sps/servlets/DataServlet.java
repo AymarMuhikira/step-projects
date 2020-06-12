@@ -14,6 +14,9 @@
 
 package com.google.sps.servlets;
 
+import com.google.cloud.language.v1.Document;
+import com.google.cloud.language.v1.LanguageServiceClient;
+import com.google.cloud.language.v1.Sentiment;
 import com.google.sps.data.CommentData;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -61,7 +64,13 @@ public class DataServlet extends HttpServlet {
         String text = (String) entity.getProperty("text");
         long id = entity.getKey().getId();
 
-        commentData.addComment("Comment#" + commentNumber + ": " + text, id);
+        Document doc = Document.newBuilder().setContent(text).setType(Document.Type.PLAIN_TEXT).build();
+        LanguageServiceClient languageService = LanguageServiceClient.create();
+        Sentiment sentiment = languageService.analyzeSentiment(doc).getDocumentSentiment();
+        float score = sentiment.getScore();
+        languageService.close();
+
+        commentData.addComment("Comment#" + commentNumber + ": " + text + "(" + score + ")", id);
       }  
     }
 
