@@ -14,19 +14,82 @@
 
 package com.google.sps.servlets;
 
+import com.google.sps.data.CommentData;
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.SortDirection;
+import com.google.gson.Gson;
 import java.io.IOException;
+import java.util.ArrayList;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/** Servlet that returns some example content. TODO: modify this file to handle comments data */
+/** Servlet that returns some example content. */
 @WebServlet("/data")
 public class DataServlet extends HttpServlet {
 
+  private CommentData commentData = new CommentData();    
+
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    response.setContentType("text/html;");
-    response.getWriter().println("<h1>Hello Aymar!</h1>");
+    int maxComment = 0;  
+    String maxCommentstring = request.getParameter("max-comment");
+
+    try {
+      maxComment = Integer.parseInt(maxCommentstring);
+    } catch (NumberFormatException e) {
+      System.err.println("Could not convert string " + maxCommentstring + " to int");
+      maxComment = 1;
+    }
+
+    commentData = new CommentData();  
+
+    Query query = new Query("Comment").addSort("number", SortDirection.ASCENDING);
+
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    PreparedQuery results = datastore.prepare(query);
+
+    for (Entity entity : results.asIterable()) {
+      int commentNumber = commentData.getSize() + 1;
+
+      if (commentNumber <= maxComment) {
+        String text = (String) entity.getProperty("text");
+        long id = entity.getKey().getId();
+
+        commentData.addComment("Comment#" + commentNumber + ": " + text, id);
+      }  
+    }
+
+    response.setContentType("application/json");
+    String json = convertToJson(commentData);
+    response.getWriter().println(json);
+  }
+
+  @Override
+  public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String comment = request.getParameter("cmnt");
+
+    Entity taskEntity = new Entity("Comment");
+    taskEntity.setProperty("number", commentData.getSize() + 1);
+    taskEntity.setProperty("text", comment);
+    
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    datastore.put(taskEntity);
+
+    response.sendRedirect("/index.html");
+  }
+
+  /**
+   * Converts an ArrayList into a JSON string using Gson library
+   */
+  private String convertToJson(CommentData msg) {
+    Gson gson = new Gson();
+    String json = gson.toJson(msg);
+    return json;
   }
 }
