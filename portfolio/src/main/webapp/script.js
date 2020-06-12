@@ -42,7 +42,7 @@ async function getHello() {
 async function getMessage() {
   const response = await fetch('/data');
   const json = await response.json();
-  const message = json.firstMessage + " " + json.secondMessage + " " + json.thirdMessage;;
+  const message = json.firstMessage + " " + json.secondMessage + " " + json.thirdMessage;
   document.getElementById('message-container').innerText = message;
 }
 
@@ -53,8 +53,8 @@ async function getComments() {
   var maxComments = document.getElementById('max-comment').value;
   const response = await fetch('/data?max-comment=' + maxComments);
   const json = await response.json();
-  const posted_comments = document.getElementById('posted_comments');
-  posted_comments.innerHTML = "";
+  const postedComments = document.getElementById('posted_comments');
+  postedComments.innerHTML = "";
   const numComments = json.numComments;
   const comments = json.comments;
   for (var i = 0; i < numComments; i++) {
@@ -81,7 +81,7 @@ async function getComments() {
     liElement.appendChild(textElement);
     liElement.appendChild(deleteButtonElement);
 
-    posted_comments.appendChild(liElement);
+    postedComments.appendChild(liElement);
   }
 }
 

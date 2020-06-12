@@ -43,7 +43,7 @@ public class DataServlet extends HttpServlet {
     try {
       maxComment = Integer.parseInt(maxCommentstring);
     } catch (NumberFormatException e) {
-      System.err.println("Could not convert to int: " + maxCommentstring);
+      System.err.println("Could not convert string " + maxCommentstring + " to int");
       maxComment = 1;
     }
 
