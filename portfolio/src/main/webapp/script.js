@@ -42,7 +42,7 @@ async function getHello() {
 async function getMessage() {
   const response = await fetch('/data');
   const json = await response.json();
-  const message = "" + json.msg1 + " " + json.msg2 + " " + json.msg3;
+  const message = json.firstMessage + " " + json.secondMessage + " " + json.thirdMessage;;
   document.getElementById('message-container').innerText = message;
 }
 
@@ -50,15 +50,16 @@ async function getMessage() {
  *Gets the comments posted and prints them back
  */
 async function getComments() {
-  var max_comments = document.getElementById('max-comment').value;
-  const response = await fetch('/data?max-comment=' + max_comments);
+  var maxComments = document.getElementById('max-comment').value;
+  const response = await fetch('/data?max-comment=' + maxComments);
   const json = await response.json();
   const posted_comments = document.getElementById('posted_comments');
   posted_comments.innerHTML = "";
-  const num_comments = json.numComments;
+  const numComments = json.numComments;
   const comments = json.comments;
-  const ids = json.ids;
-  for (var i = 0; i < num_comments; i++) {
+  for (var i = 0; i < numComments; i++) {
+    const ids = json.ids;
+
     const liElement = document.createElement('li');
     liElement.className = 'comment';
     
@@ -67,7 +68,7 @@ async function getComments() {
 
     const deleteButtonElement = document.createElement('button');
     deleteButtonElement.innerText = 'Delete';
-    var id = ids[i];
+    const id = ids[i];
 
     deleteButtonElement.value = id;
     deleteButtonElement.addEventListener('click', () => {
