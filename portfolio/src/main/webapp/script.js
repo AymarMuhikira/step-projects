@@ -20,11 +20,11 @@ function addRandomFact() {
       ['I am new to web dev', 'I am an EE major', 'I speak french'];
 
   // Pick a random fact.
-  const greeting = facts[Math.floor(Math.random() * facts.length)];
+  const randomFact = facts[Math.floor(Math.random() * facts.length)];
 
   // Add it to the page.
   const factContainer = document.getElementById('random-fact-container');
-  factContainer.innerText = greeting;
+  factContainer.innerText = randomFact;
 }
 
 /**
@@ -34,4 +34,14 @@ async function getHello() {
   const response = await fetch('/data');
   const hello_msg = await response.text();
   document.getElementById('greeting-container').innerText = hello_msg;
+}
+
+/**
+ *Adds json messages to the message division
+ */
+async function getMessage() {
+    const response = await fetch('/data');
+    const json = await response.json();
+    const message = "" + json.firstMessage + " " + json.secondMessage + " " + json.thirdMessage;
+    document.getElementById('message-container').innerText = message;
 }
