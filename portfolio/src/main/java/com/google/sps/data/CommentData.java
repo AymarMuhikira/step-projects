@@ -20,7 +20,6 @@ import java.util.*;
 public final class CommentData {
 
   private final List<String> comments;
-<<<<<<< HEAD
   private final List<String> ids;
   private int numComments;
 
@@ -34,15 +33,6 @@ public final class CommentData {
     this.comments.add(comment);
     this.ids.add(String.valueOf(id));
     this.numComments = this.comments.size();
-=======
-
-  public CommentData() {
-    this.comments = new ArrayList<>();
-  }
-
-  public void addComment(String comment) {
-    this.comments.add(comment);
->>>>>>> week3-serverStore
   }
 
   public int getSize() {

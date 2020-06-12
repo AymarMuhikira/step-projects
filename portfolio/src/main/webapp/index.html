@@ -23,7 +23,14 @@
           <form action="/data" method="POST">
             <label for="cmnt">Enter your comment here:</label><br>
             <input type="text" id="cmnt" name="cmnt" value="Type here"><br><br>
-            <input type="submit" value="Post">
+            <input type="submit" value="Post"><br> <br>
+            <label for="max-cmnt">Select the maximum number of comments to display</label> <br>
+            <select name="max-comment" id="max-comment" onchange="getComments()">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
           </form><br><br>
           <ul id="posted_comments"></ul>
         </div>

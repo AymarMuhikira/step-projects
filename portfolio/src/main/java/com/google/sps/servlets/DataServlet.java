@@ -37,7 +37,6 @@ public class DataServlet extends HttpServlet {
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-<<<<<<< HEAD
     int maxComment = 0;  
     String maxCommentstring = request.getParameter("max-comment");
 
@@ -48,8 +47,6 @@ public class DataServlet extends HttpServlet {
       maxComment = 1;
     }
 
-=======
->>>>>>> week3-serverStore
     commentData = new CommentData();  
 
     Query query = new Query("Comment").addSort("number", SortDirection.ASCENDING);
@@ -58,7 +55,6 @@ public class DataServlet extends HttpServlet {
     PreparedQuery results = datastore.prepare(query);
 
     for (Entity entity : results.asIterable()) {
-<<<<<<< HEAD
       int commentNumber = commentData.getSize() + 1;
 
       if (commentNumber <= maxComment) {
@@ -67,13 +63,6 @@ public class DataServlet extends HttpServlet {
 
         commentData.addComment("Comment#" + commentNumber + ": " + text, id);
       }  
-=======
-      int commentNumber = commentData.getSize() + 1;  
-
-      String text = (String) entity.getProperty("text");
-
-      commentData.addComment("Comment#" + commentNumber + ": " + text);
->>>>>>> week3-serverStore
     }
 
     response.setContentType("application/json");
