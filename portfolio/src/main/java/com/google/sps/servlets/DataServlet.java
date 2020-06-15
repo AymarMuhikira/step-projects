@@ -14,6 +14,9 @@
 
 package com.google.sps.servlets;
 
+import com.google.cloud.translate.Translate;
+import com.google.cloud.translate.TranslateOptions;
+import com.google.cloud.translate.Translation;
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.google.cloud.language.v1.Sentiment;
@@ -60,11 +63,11 @@ public class DataServlet extends HttpServlet {
       int commentNumber = commentData.getSize() + 1;
 
       if (commentNumber <= maxComment) {
-        String text = (String) entity.getProperty("text");
+        String translatedText = (String) entity.getProperty("translated");
         long id = entity.getKey().getId();
         String score = (String) entity.getProperty("score");
 
-        commentData.addComment("Comment#" + commentNumber + ": " + text + "(" + score + ")", id);
+        commentData.addComment("Comment#" + commentNumber + ": " + translatedText + "(" + score + ")", id);
       }  
     }
 
@@ -83,10 +86,15 @@ public class DataServlet extends HttpServlet {
     float score = sentiment.getScore();
     languageService.close();
 
+    Translate translate = TranslateOptions.getDefaultInstance().getService();
+    Translation translation = translate.translate(comment, Translate.TranslateOption.targetLanguage("fr"));
+    String translatedText = translation.getTranslatedText();
+
     Entity taskEntity = new Entity("Comment");
     taskEntity.setProperty("number", commentData.getSize() + 1);
     taskEntity.setProperty("text", comment);
     taskEntity.setProperty("score", String.valueOf(score));
+    taskEntity.setProperty("translated", translatedText);
     
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(taskEntity);
