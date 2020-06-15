@@ -26,7 +26,6 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.gson.Gson;
 import java.io.IOException;
-import java.util.ArrayList;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -63,12 +62,7 @@ public class DataServlet extends HttpServlet {
       if (commentNumber <= maxComment) {
         String text = (String) entity.getProperty("text");
         long id = entity.getKey().getId();
-
-        Document doc = Document.newBuilder().setContent(text).setType(Document.Type.PLAIN_TEXT).build();
-        LanguageServiceClient languageService = LanguageServiceClient.create();
-        Sentiment sentiment = languageService.analyzeSentiment(doc).getDocumentSentiment();
-        float score = sentiment.getScore();
-        languageService.close();
+        String score = (String) entity.getProperty("score");
 
         commentData.addComment("Comment#" + commentNumber + ": " + text + "(" + score + ")", id);
       }  
@@ -83,9 +77,16 @@ public class DataServlet extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
     String comment = request.getParameter("cmnt");
 
+    Document doc = Document.newBuilder().setContent(comment).setType(Document.Type.PLAIN_TEXT).build();
+    LanguageServiceClient languageService = LanguageServiceClient.create();
+    Sentiment sentiment = languageService.analyzeSentiment(doc).getDocumentSentiment();
+    float score = sentiment.getScore();
+    languageService.close();
+
     Entity taskEntity = new Entity("Comment");
     taskEntity.setProperty("number", commentData.getSize() + 1);
     taskEntity.setProperty("text", comment);
+    taskEntity.setProperty("score", String.valueOf(score));
     
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(taskEntity);
