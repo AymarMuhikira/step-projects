@@ -14,6 +14,9 @@
 
 package com.google.sps.servlets;
 
+import com.google.cloud.translate.Translate;
+import com.google.cloud.translate.TranslateOptions;
+import com.google.cloud.translate.Translation;
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
 import com.google.cloud.language.v1.Sentiment;
@@ -26,7 +29,6 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.gson.Gson;
 import java.io.IOException;
-import java.util.ArrayList;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -61,16 +63,11 @@ public class DataServlet extends HttpServlet {
       int commentNumber = commentData.getSize() + 1;
 
       if (commentNumber <= maxComment) {
-        String text = (String) entity.getProperty("text");
+        String translatedText = (String) entity.getProperty("translated");
         long id = entity.getKey().getId();
+        String score = (String) entity.getProperty("score");
 
-        Document doc = Document.newBuilder().setContent(text).setType(Document.Type.PLAIN_TEXT).build();
-        LanguageServiceClient languageService = LanguageServiceClient.create();
-        Sentiment sentiment = languageService.analyzeSentiment(doc).getDocumentSentiment();
-        float score = sentiment.getScore();
-        languageService.close();
-
-        commentData.addComment("Comment#" + commentNumber + ": " + text + "(" + score + ")", id);
+        commentData.addComment("Comment#" + commentNumber + ": " + translatedText + "(" + score + ")", id);
       }  
     }
 
@@ -83,9 +80,21 @@ public class DataServlet extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
     String comment = request.getParameter("cmnt");
 
+    Document doc = Document.newBuilder().setContent(comment).setType(Document.Type.PLAIN_TEXT).build();
+    LanguageServiceClient languageService = LanguageServiceClient.create();
+    Sentiment sentiment = languageService.analyzeSentiment(doc).getDocumentSentiment();
+    float score = sentiment.getScore();
+    languageService.close();
+
+    Translate translate = TranslateOptions.getDefaultInstance().getService();
+    Translation translation = translate.translate(comment, Translate.TranslateOption.targetLanguage("fr"));
+    String translatedText = translation.getTranslatedText();
+
     Entity taskEntity = new Entity("Comment");
     taskEntity.setProperty("number", commentData.getSize() + 1);
     taskEntity.setProperty("text", comment);
+    taskEntity.setProperty("score", String.valueOf(score));
+    taskEntity.setProperty("translated", translatedText);
     
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(taskEntity);
