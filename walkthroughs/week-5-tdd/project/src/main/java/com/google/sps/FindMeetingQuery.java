@@ -22,33 +22,37 @@ public final class FindMeetingQuery {
     List<Event> optionalEvents = new ArrayList<>();  
 
     for(Event event: events) {
-      int type = eventType(event, request);
-      if (type == 1) {
+      if (hasRequiredAttendees(event, request)) {
         requiredEvents.add(event);  
       }
-      else if (type == 2) {
+      //Only check for optional attendees if the event has no required one
+      else if (hasOptionalAttendees(event, request)) {
         optionalEvents.add(event);    
       }
     }
 
-    Collection<TimeRange> requiredTimes = getRequiredTime(requiredEvents, request.getDuration());
-    Collection<TimeRange> optionalTimes = getOptionalTime(optionalEvents, request.getDuration(), requiredTimes);
+    List<TimeRange> requiredTimes = getRequiredTime(requiredEvents, request.getDuration());
+    List<TimeRange> optionalTimes = getOptionalTime(optionalEvents, request.getDuration(), requiredTimes);
 
-    if(requiredEvents.size() == 0 || optionalTimes.size() > 0) {
+    if (optionalTimes.size() > 0) {
       return optionalTimes;  
     }
     return requiredTimes;
   }
 
-  private Collection<TimeRange> getTime(Collection<Event> events, long requestDuration, Collection<TimeRange> initial) {
-    Collection<TimeRange> meetingTimes = initial;
+  private List<TimeRange> getTime(Collection<Event> events, long requestDuration, List<TimeRange> initial) {
+    List<TimeRange> meetingTimes = initial;
 
     for (Event event: events) {
       List<TimeRange> temp = new ArrayList<>();
       for (TimeRange time: meetingTimes) {
-        if (time.contains(event.getWhen())){
+        //time:     |--------------|
+        //event:         |----|
+        //division: |----|    |----|
+        if (time.contains(event.getWhen())) {
           TimeRange firstDivision = TimeRange.fromStartEnd(time.start(), event.getWhen().start(), false);
           TimeRange secondDivision = TimeRange.fromStartEnd(event.getWhen().end(), time.end(), false);
+          //Use END_OF_DAY + 1 because the end() returns the open interval end, so for an event at the end of the day, this value is 1440, not 1439.
           if (firstDivision.duration() >= requestDuration && firstDivision.end() <= TimeRange.END_OF_DAY + 1) {
             temp.add(firstDivision);  
           }
@@ -56,18 +60,30 @@ public final class FindMeetingQuery {
             temp.add(secondDivision);  
           }
         }
+        //time:     |--------------|
+        //event:         |------------|
+        //division: |----|
         else if (time.contains(event.getWhen().start())) {
           TimeRange division = TimeRange.fromStartEnd(time.start(), event.getWhen().start(), false);
           if (division.duration() >= requestDuration && division.end() <= TimeRange.END_OF_DAY + 1) {
             temp.add(division);
           }
         }
+        //time:     |--------------|
+        //event:  |-----------|
+        //division:           |----|
         else if (time.contains(event.getWhen().end())) {
           TimeRange division = TimeRange.fromStartEnd(event.getWhen().end(), time.end(), false);
           if (division.duration() >= requestDuration && division.end() <= TimeRange.END_OF_DAY + 1) {
             temp.add(division);  
           }
         }
+        //time:     |------|
+        //event:             |----|
+        //division: |------|
+        //make sure to avoid/do not include case where the time is entirely contained in the event
+        //avoid-time:     |----|
+        //avoid-event: |-----------|
         else if (!event.getWhen().contains(time)){
           temp.add(time);  
         } 
@@ -78,7 +94,7 @@ public final class FindMeetingQuery {
     return meetingTimes;  
   }
 
-  private Collection<TimeRange> getRequiredTime(Collection<Event> events, long requestDuration) {
+  private List<TimeRange> getRequiredTime(Collection<Event> events, long requestDuration) {
     List<TimeRange> meetingTimes = new ArrayList<>();  
     TimeRange initial = TimeRange.WHOLE_DAY;
 
@@ -89,22 +105,126 @@ public final class FindMeetingQuery {
     return getTime(events, requestDuration, meetingTimes);
   }
 
-  private Collection<TimeRange> getOptionalTime(Collection<Event> events, long requestDuration, Collection<TimeRange> requiredTimes) {
+  private List<TimeRange> getOptionalTime(Collection<Event> events, long requestDuration, List<TimeRange> requiredTimes) {
     return getTime(events, requestDuration, requiredTimes);
   }
 
-  private int eventType(Event event, MeetingRequest request) {
-    HashSet<String> attendees = new HashSet<> (event.getAttendees());
-    attendees.retainAll(request.getAttendees());  
-    if (attendees.size() > 0) {
-      return 1;
+  private boolean hasRequiredAttendees(Event event, MeetingRequest request) {
+    Collection<String> eventAttendees = event.getAttendees();
+    Collection<String> meetingAttendees = request.getAttendees();  
+    boolean hasAttendees = !Collections.disjoint(eventAttendees, meetingAttendees);
+    return hasAttendees;
+  }
+
+  private boolean hasOptionalAttendees(Event event, MeetingRequest request) {
+    Collection<String> eventAttendees = event.getAttendees();
+    Collection<String> optionalAttendees = request.getOptionalAttendees();
+    boolean hasAttendees = !Collections.disjoint(eventAttendees, optionalAttendees);
+    return hasAttendees;
+  }
+
+  private List<TimeRange> getTimeAlternative(Collection<Event> events, long requestDuration, List<TimeRange> initial) {
+    //Use sort and binary search instead of looping through potential meeting times
+    //This implementation does not give the expected results yet.
+    List<TimeRange> meetingTimes = initial;
+
+    for (Event event: events) {
+      Collections.sort(meetingTimes, TimeRange.ORDER_BY_START);
+      int upperIndex = Collections.binarySearch(meetingTimes, event.getWhen(), TimeRange.ORDER_BY_START);
+      if(upperIndex < meetingTimes.size()) {
+        TimeRange upperTime = meetingTimes.get(upperIndex);
+        //time:     |--------------|
+        //event:         |----|
+        //division: |----|    |----|
+        if(upperTime.contains(event.getWhen())) {
+          meetingTimes.remove(upperIndex);
+          TimeRange firstDivision = TimeRange.fromStartEnd(upperTime.start(), event.getWhen().start(), false);
+          TimeRange secondDivision = TimeRange.fromStartEnd(event.getWhen().end(), upperTime.end(), false);
+          //Use END_OF_DAY + 1 because the end() returns the open interval end, so for an event at the end of the day, this value is 1440, not 1439.
+          if (firstDivision.duration() >= requestDuration && firstDivision.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(firstDivision);  
+          }
+          if (secondDivision.duration() >= requestDuration && secondDivision.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(secondDivision);  
+          }
+        }
+        //time:     |--------------|
+        //event:         |------------|
+        //division: |----|
+        else if (upperTime.contains(event.getWhen().start())) {
+          meetingTimes.remove(upperIndex);
+          TimeRange division = TimeRange.fromStartEnd(upperTime.start(), event.getWhen().start(), false);
+          if (division.duration() >= requestDuration && division.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(division);
+          }
+        }
+        //time:     |--------------|
+        //event:  |-----------|
+        //division:           |----|
+        else if (upperTime.contains(event.getWhen().end())) {
+          meetingTimes.remove(upperIndex);
+          TimeRange division = TimeRange.fromStartEnd(event.getWhen().end(), upperTime.end(), false);
+          if (division.duration() >= requestDuration && division.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(division);  
+          }
+        }
+        //make sure to avoid/do not include case where the time is entirely contained in the event
+        //avoid-time:     |----|
+        //avoid-event: |-----------|
+        else if (event.getWhen().contains(upperTime)){
+          meetingTimes.remove(upperIndex);  
+        } 
+      }
+
+      int lowerIndex = upperIndex - 1;
+
+      if(lowerIndex >= 0) {
+        TimeRange lowerTime = meetingTimes.get(lowerIndex);
+        //time:     |--------------|
+        //event:         |----|
+        //division: |----|    |----|
+        if(lowerTime.contains(event.getWhen())) {
+          meetingTimes.remove(lowerIndex);
+          TimeRange firstDivision = TimeRange.fromStartEnd(lowerTime.start(), event.getWhen().start(), false);
+          TimeRange secondDivision = TimeRange.fromStartEnd(event.getWhen().end(), lowerTime.end(), false);
+          //Use END_OF_DAY + 1 because the end() returns the open interval end, so for an event at the end of the day, this value is 1440, not 1439.
+          if (firstDivision.duration() >= requestDuration && firstDivision.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(firstDivision);  
+          }
+          if (secondDivision.duration() >= requestDuration && secondDivision.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(secondDivision);  
+          }
+        }
+        //time:     |--------------|
+        //event:         |------------|
+        //division: |----|
+        else if (lowerTime.contains(event.getWhen().start())) {
+          meetingTimes.remove(lowerIndex);
+          TimeRange division = TimeRange.fromStartEnd(lowerTime.start(), event.getWhen().start(), false);
+          if (division.duration() >= requestDuration && division.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(division);
+          }
+        }
+        //time:     |--------------|
+        //event:  |-----------|
+        //division:           |----|
+        else if (lowerTime.contains(event.getWhen().end())) {
+          meetingTimes.remove(lowerIndex);
+          TimeRange division = TimeRange.fromStartEnd(event.getWhen().end(), lowerTime.end(), false);
+          if (division.duration() >= requestDuration && division.end() <= TimeRange.END_OF_DAY + 1) {
+            meetingTimes.add(division);  
+          }
+        }
+        //make sure to avoid/do not include case where the time is entirely contained in the event
+        //avoid-time:     |----|
+        //avoid-event: |-----------|
+        else if (event.getWhen().contains(lowerTime)){
+          meetingTimes.remove(lowerIndex);  
+        } 
+      }
     }
-    HashSet<String> optionalAttendees = new HashSet<> (event.getAttendees());
-    optionalAttendees.retainAll(request.getOptionalAttendees());
-    if (optionalAttendees.size() > 0) {
-        return 2;
-    }
-    return -1;
+
+    return meetingTimes;  
   }
 }
 
